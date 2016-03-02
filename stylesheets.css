@@ -2,9 +2,23 @@ body {
 	text-align: center;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
+.status {
+	position: absolute;
+    top: 10px;
+    font-size: 12px;
+    color: gray;
+}
 .list {
-	margin: 10px 0;
 	line-height: 1.6;
+    border: 1px solid #565252;
+    max-width: 200px;
+    padding: 10px 20px;
+    margin: 10px auto;
+    position: relative;
+    text-align: left;
+}
+.main {
+	max-width: 160px;
 }
 .title {
 	font-size: 14px;
@@ -12,4 +26,13 @@ body {
 .subtitle {
 	font-size: 10px;
 	color: gray;
+}
+.distance {
+	color: #DB1C1C;
+    display: inline-block;
+    position: absolute;
+    right: 14px;
+    top: 12px;
+    font-size: 12px;
+    text-align: right;
 }

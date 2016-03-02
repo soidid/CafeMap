@@ -5,17 +5,23 @@
       <meta charset="UTF-8">
       <link href="./stylesheets.css" media="all" rel="stylesheet"></link>
       <script type="text/javascript" src="./main.js"></script>
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.1.min.js"></script>
+      <script src="http://maps.googleapis.com/maps/api/js"></script> 
   </head>
 <body>
+<div id="status" class="status"></div>
 
-<h1>CafeMap</h1>
-
-<fb:login-button scope="public_profile,email,user_likes" onlogin="checkLoginState();">
-</fb:login-button>
+<fb:login-button scope="public_profile,email,user_likes" onlogin="checkLoginState();"></fb:login-button>
 
 <button onclick="logout();">logout</button>
 
-<div id="status"></div>
+<h1>CafeMap</h1>
+
+<button onclick="checkDistance();">check distance!</button>
+
+
+
+
 <div id="cafes"></div>
 
 </body>

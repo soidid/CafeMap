@@ -1,5 +1,9 @@
   var USER_LIKE = [];
+  var USER_LOCATION = false;
+  var LOCATION_INFO_ACTIVATED = false;
+  var LOCATION_COUNT = 0;
 
+ 
   // This is called with the results from from FB.getLoginStatus().
   function statusChangeCallback(response) {
     console.log('statusChangeCallback');
@@ -12,6 +16,7 @@
       // Logged into your app and Facebook.
       testAPI();
     } else if (response.status === 'not_authorized') {
+      console.log(document.getElementById('status'))
       // The person is logged into Facebook, but not your app.
       document.getElementById('status').innerHTML = 'Please log ' +
         'into this app.';
@@ -74,7 +79,7 @@
     FB.api('/me', function(response) {
       console.log('Successful login for: ' + response.name);
       document.getElementById('status').innerHTML =
-        'Thanks for logging in, ' + response.name + '!';
+        'Glad to see you, ' + response.name + '!';
 
       console.log(response)
       getLike(response.id);
@@ -92,7 +97,7 @@
           if(next){
               getLikeCont(next);
           }else{
-              processResult();
+              renderResult();
           }
         }
       }
@@ -103,13 +108,13 @@
         if (response && !response.error) {
           
             handleLikeCallback(response);
-            processResult();//TEMP
+            renderResult();//TEMP
             /*
             var next = response.paging.next;
             if(next){
                 getLikeCont(next);
             }else{
-                processResult();
+                renderResult();
             }
             */
         }
@@ -118,15 +123,16 @@
   function handleLikeCallback(response){
     response.data.map((item,i)=>{
         getLocation(item.id).then((place_info)=>{
-            console.log(place_info)
+            //console.log(place_info)
+            
             if(place_info && place_info.location){
     
                 item.longitude = place_info.location.longitude;
                 item.latitude = place_info.location.latitude;
                 item.category = place_info.category;
 
-                if(isEatable(item.category)){
-                  USER_LIKE.push(item);
+                if(isEatable(item.category)===true){
+                    USER_LIKE.push(item);
                 }
             }
 
@@ -142,24 +148,46 @@
     }
   }
 
-  function processResult(){
+  function renderResult(){
+    //render
     var root = document.getElementById('cafes');
     var current = root;
+    root.innerHTML = "";
+
+    if(LOCATION_INFO_ACTIVATED === true){
+       USER_LIKE.sort((a,b)=>{
+          return a.distance.value - b.distance.value;
+       })
+    }
+    console.log(USER_LIKE)
     USER_LIKE.map((item,i)=>{
+
         console.log(item)
         
         var node = document.createElement("div");
         node.className = "list";
+        node.id = item.id;
         
+        var main = document.createElement("div");
+        main.className = "main";
+        node.appendChild(main);
+
         var title = document.createElement("div");
         title.className = "title";
         title.innerHTML = item.name;
-        node.appendChild(title);
+        main.appendChild(title);
 
         var subtitle = document.createElement("div");
         subtitle.className = "subtitle";
         subtitle.innerHTML = item.category;
-        node.appendChild(subtitle);
+        main.appendChild(subtitle);
+
+        if(item.distance){
+            var distance = document.createElement("div");
+            distance.className = "distance";
+            distance.innerHTML = item.distance.text;
+            node.appendChild(distance);
+        }
         
 
         current.appendChild(node);      
@@ -175,13 +203,85 @@
           if (response && !response.error) {
               resolve(response);  
           }else{
-              resolve(undefined);
+              resolve(false);
           }
         }
       );
 
+    });    
+  }
+
+  function getUserLocation(){
+    return new Promise(function(resolve, reject) {  
+
+      if (navigator.geolocation) {
+        console.log('Geolocation is supported!');
+        navigator.geolocation.getCurrentPosition((position)=>{
+            USER_LOCATION = {};
+            USER_LOCATION.latitude = position.coords.latitude;
+            USER_LOCATION.longitude = position.coords.longitude;
+            resolve(true);
+        }); 
+      }else {
+        alert('Geolocation is not supported.');
+        resolve(false)
+      }
+    });
+  }
+  
+  function checkDistance(){
+    if(USER_LOCATION === false){
+       getUserLocation().then((updateGeo)=>{
+          if(updateGeo === true){
+             calculate()
+          }
+       });
+    }else{
+      calculate();
+    }
+  }
+  function calculate(){
+    //console.log(USER_LOCATION)
+    //https://maps.googleapis.com/maps/api/distancematrix/json?origins=25.05309,121.51606&destinations=25.120097138238,121.59562073517&key=AIzaSyAP_DW8EgCwQe165zQ76v-Tpx3ddYR9E4Q
+    var origin = new google.maps.LatLng(USER_LOCATION.latitude, USER_LOCATION.longitude);
+      
+      LOCATION_COUNT = 0;
+
+      USER_LIKE.map((item,i)=>{
+        console.log(item.latitude+","+item.longitude)
+        var destination = new google.maps.LatLng(item.latitude, item.longitude);
+
+        var service = new google.maps.DistanceMatrixService();
+        
+        service.getDistanceMatrix(
+          {
+            origins: [origin],
+            destinations: [destination],
+            travelMode: google.maps.TravelMode.TRANSIT
+          }, (response, status)=>{
+
+              item.distance = response.rows[0].elements[0].distance;
+              item.duration = response.rows[0].elements[0].duration;
+              
+              LOCATION_COUNT++;
+              
+              
+              if(LOCATION_COUNT === USER_LIKE.length){
+                console.log(USER_LIKE)
+                  LOCATION_INFO_ACTIVATED = true;
+                  //re-render
+                  renderResult();
+              }
+
+              
+          }
+        );
+
+
     });
     
+    
+ 
   }
 
 
