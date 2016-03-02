@@ -1,0 +1,15 @@
+body {
+	text-align: center;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.list {
+	margin: 10px 0;
+	line-height: 1.6;
+}
+.title {
+	font-size: 14px;
+}
+.subtitle {
+	font-size: 10px;
+	color: gray;
+}
