@@ -108,15 +108,16 @@
         if (response && !response.error) {
           
             handleLikeCallback(response);
-            renderResult();//TEMP
-            /*
+            //renderResult();//TEMP
+            
+
             var next = response.paging.next;
             if(next){
                 getLikeCont(next);
             }else{
                 renderResult();
             }
-            */
+           
         }
     })
   }
@@ -155,6 +156,11 @@
     root.innerHTML = "";
 
     if(LOCATION_INFO_ACTIVATED === true){
+       USER_LIKE.map((item,i)=>{
+          if(!item.distance){
+              USER_LIKE.splice(i, 1);
+          }
+       })
        USER_LIKE.sort((a,b)=>{
           return a.distance.value - b.distance.value;
        })
