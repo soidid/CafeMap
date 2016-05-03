@@ -162,7 +162,7 @@
         TOTAL_COUNT += response.data.length;
         TOTAL_COUNT_NODE.innerText = TOTAL_COUNT;
         console.log(TOTAL_COUNT);
-          
+
         //First get geo ones
         getGeoList(response.data).then((geoList)=>{
             
@@ -346,7 +346,12 @@
     });
   }
  
-
+  function resetCounts(){
+    TOTAL_COUNT = 0;
+    CAFE_COUNT = 0;
+    TOTAL_COUNT_NODE.innerText = 0;
+    CAFE_COUNT_NODE.innerText = 0;
+  }
   // Logout
   function logout(){
     FB.logout(function(response) {
@@ -357,5 +362,6 @@
 
       var root = document.getElementById('cafes');
       root.innerHTML = "";
+      resetCounts();
     });
   }
