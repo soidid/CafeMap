@@ -1,0 +1,25 @@
+{
+  "name": "cafe-map",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.es6.js",
+  "scripts": {
+    "build": "babel main.es6.js --out-file main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/soidid/CafeMap.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/soidid/CafeMap/issues"
+  },
+  "homepage": "https://github.com/soidid/CafeMap#readme",
+  "devDependencies": {
+    "babel-cli": "^6.8.0",
+    "babel-plugin-transform-es2015-arrow-functions": "^6.8.0",
+    "babel-plugin-transform-es2015-template-literals": "^6.8.0"
+  }
+}
