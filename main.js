@@ -3,6 +3,11 @@
   var LOCATION_INFO_ACTIVATED = false;
   var LOCATION_COUNT = 0;
 
+  var TOTAL_COUNT = 0;
+  var CAFE_COUNT = 0;
+  var TOTAL_COUNT_NODE = document.getElementById('totalCount');
+  var CAFE_COUNT_NODE = document.getElementById('cafeCount');
+
   function updateCSS(state){
     if(state === 'login'){
       document.getElementById('login').className = 'hide';
@@ -154,6 +159,10 @@
   function handleLikeCallback(response){
     
     return new Promise(function(resolve, reject) { 
+        TOTAL_COUNT += response.data.length;
+        TOTAL_COUNT_NODE.innerText = TOTAL_COUNT;
+        console.log(TOTAL_COUNT);
+          
         //First get geo ones
         getGeoList(response.data).then((geoList)=>{
             
@@ -167,6 +176,8 @@
                 getShopDistance(item).then((item)=>{
                     if(isEatable(item.category)===true){
                         USER_LIKE.push(item);
+                        CAFE_COUNT += 1;
+                        CAFE_COUNT_NODE.innerText = CAFE_COUNT;
                     }
 
                     count++;
