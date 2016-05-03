@@ -3,20 +3,33 @@
   var LOCATION_INFO_ACTIVATED = false;
   var LOCATION_COUNT = 0;
 
- 
+  function updateCSS(state){
+    if(state === 'login'){
+      document.getElementById('login').className = 'hide';
+      document.getElementById('logout').className = 'show';
+    }else{
+      document.getElementById('login').className = 'show';
+      document.getElementById('logout').className = 'hide';
+    }
+  }
   // This is called with the results from from FB.getLoginStatus().
   function statusChangeCallback(response) {
+
     console.log('statusChangeCallback');
     console.log(response);
     // The response object is returned with a status field that lets the
     // app know the current login status of the person.
     // Full docs on the response object can be found in the documentation
     // for FB.getLoginStatus().
+
+    console.log(document.getElementById('status'))
     if (response.status === 'connected') {
       // Logged into your app and Facebook.
       testAPI();
+      updateCSS('login');
+
     } else if (response.status === 'not_authorized') {
-      console.log(document.getElementById('status'))
+      
       // The person is logged into Facebook, but not your app.
       document.getElementById('status').innerHTML = 'Please log ' +
         'into this app.';
@@ -82,11 +95,25 @@
         'Glad to see you, ' + response.name + '!';
 
       console.log(response)
-      getLike(response.id);
+
+      if(USER_LOCATION === false){
+          getUserLocation().then((updateGeo)=>{
+             if(updateGeo === true){
+                 getLike(response.id);
+             }
+          });
+      }else{
+          getLike(response.id);
+      }
+
+      
     });
   }
 
+
   function getLike(id){
+    console.log("USER_LOCATION:")
+    console.log(USER_LOCATION)
     FB.api("/"+id+"/likes", (response)=>{
 
         if (response && !response.error) {
@@ -107,40 +134,77 @@
     FB.api(page_id,function(response){
         if (response && !response.error) {
           
-            handleLikeCallback(response);
-            //renderResult();//TEMP
+            handleLikeCallback(response).then(()=>{
+                //renderResult();//TEMP: only render the fist page data
+                var next = false;
+                if(response.paging){
+                  next = response.paging.next;
+                }
+                if(next){
+                    getLikeCont(next);
+                }else{
+                    renderResult();
+                }
+            });
             
-
-            var next = response.paging.next;
-            if(next){
-                getLikeCont(next);
-            }else{
-                renderResult();
-            }
            
         }
     })
   }
   function handleLikeCallback(response){
-    response.data.map((item,i)=>{
-        getLocation(item.id).then((place_info)=>{
-            //console.log(place_info)
-            
-            if(place_info && place_info.location){
     
-                item.longitude = place_info.location.longitude;
-                item.latitude = place_info.location.latitude;
-                item.category = place_info.category;
-
-                if(isEatable(item.category)===true){
-                    USER_LIKE.push(item);
-                }
+    return new Promise(function(resolve, reject) { 
+        //First get geo ones
+        getGeoList(response.data).then((geoList)=>{
+            
+            if(geoList.length===0){
+              resolve(true);
             }
 
-        })
-    })
-  }
+            //Then get distance
+            var count = 0;
+            geoList.map((item,i)=>{
+                getShopDistance(item).then((item)=>{
+                    if(isEatable(item.category)===true){
+                        USER_LIKE.push(item);
+                    }
 
+                    count++;
+                    if(count===geoList.length){
+                        resolve(true);
+                    }
+                });   
+            });
+        })
+    });
+  }
+  function getGeoList(data){
+   
+    return new Promise(function(resolve, reject) {
+        var geoList = [];
+        var count = 0;
+        if(data.length === 0){
+            resolve(geoList);
+        }
+        data.map((item,i)=>{
+            getLocation(item.id).then((place_info)=>{
+                //console.log(place_info)
+                if(place_info && place_info.location){
+                    item.longitude = place_info.location.longitude;
+                    item.latitude = place_info.location.latitude;
+                    item.category = place_info.category;
+                    if(item.longitude!==undefined){
+                      geoList.push(item)
+                    }
+                }
+                count++;
+                if(count===Number(data.length)){
+                    resolve(geoList);
+                }
+            });
+        });
+    });
+  }
   function isEatable(category){
     if(category.indexOf('Food')!==-1||category.indexOf('Restaurant')!==-1||category.indexOf('Cafe')!==-1){
         return true;
@@ -148,31 +212,60 @@
         return false;
     }
   }
+  function getShopDistance(item){
+    return new Promise(function(resolve, reject) {
+
+        //console.log(item.latitude+","+item.longitude)
+    
+        var origin = new google.maps.LatLng(USER_LOCATION.latitude, USER_LOCATION.longitude);
+        var destination = new google.maps.LatLng(item.latitude, item.longitude);
+    
+        var service = new google.maps.DistanceMatrixService();
+        
+        service.getDistanceMatrix(
+          {
+            origins: [origin],
+            destinations: [destination],
+            travelMode: google.maps.TravelMode.TRANSIT
+          }, (response, status)=>{
+    
+              item.distance = response.rows[0].elements[0].distance;
+              item.duration = response.rows[0].elements[0].duration;
+              //console.log(item)
+              resolve(item);
+             
+          }
+        )
+    })
+  }
 
   function renderResult(){
+    console.log("render")
     //render
     var root = document.getElementById('cafes');
     var current = root;
     root.innerHTML = "";
 
-    if(LOCATION_INFO_ACTIVATED === true){
-       USER_LIKE.map((item,i)=>{
-          if(!item.distance){
-              USER_LIKE.splice(i, 1);
-          }
-       })
-       USER_LIKE.sort((a,b)=>{
-          return a.distance.value - b.distance.value;
-       })
-    }
+    //sort
+    USER_LIKE.map((item,i)=>{
+       if(!item.distance){
+           USER_LIKE.splice(i, 1);
+       }
+    })
+    USER_LIKE.sort((a,b)=>{
+       return a.distance.value - b.distance.value;
+    })
+    
     console.log(USER_LIKE)
     USER_LIKE.map((item,i)=>{
 
-        console.log(item)
+        //console.log(item)
         
-        var node = document.createElement("div");
+        var node = document.createElement("a");
         node.className = "list";
         node.id = item.id;
+        node.href="https://www.facebook.com/profile.php?id="+node.id;
+        node.target="_blank";
         
         var main = document.createElement("div");
         main.className = "main";
@@ -187,6 +280,13 @@
         subtitle.className = "subtitle";
         subtitle.innerHTML = item.category;
         main.appendChild(subtitle);
+
+        // var facebook = document.createElement("a");
+        // var linkText = document.createTextNode("facebook");
+        // facebook.appendChild(linkText);
+        // facebook.href="https://www.facebook.com/profile.php?id="+node.id;
+
+        // main.appendChild(facebook);
 
         if(item.distance){
             var distance = document.createElement("div");
@@ -234,68 +334,17 @@
       }
     });
   }
-  
-  function checkDistance(){
-    if(USER_LOCATION === false){
-       getUserLocation().then((updateGeo)=>{
-          if(updateGeo === true){
-             calculate()
-          }
-       });
-    }else{
-      calculate();
-    }
-  }
-  function calculate(){
-    //console.log(USER_LOCATION)
-    //https://maps.googleapis.com/maps/api/distancematrix/json?origins=25.05309,121.51606&destinations=25.120097138238,121.59562073517&key=AIzaSyAP_DW8EgCwQe165zQ76v-Tpx3ddYR9E4Q
-    var origin = new google.maps.LatLng(USER_LOCATION.latitude, USER_LOCATION.longitude);
-      
-      LOCATION_COUNT = 0;
-
-      USER_LIKE.map((item,i)=>{
-        console.log(item.latitude+","+item.longitude)
-        var destination = new google.maps.LatLng(item.latitude, item.longitude);
-
-        var service = new google.maps.DistanceMatrixService();
-        
-        service.getDistanceMatrix(
-          {
-            origins: [origin],
-            destinations: [destination],
-            travelMode: google.maps.TravelMode.TRANSIT
-          }, (response, status)=>{
-
-              item.distance = response.rows[0].elements[0].distance;
-              item.duration = response.rows[0].elements[0].duration;
-              
-              LOCATION_COUNT++;
-              
-              
-              if(LOCATION_COUNT === USER_LIKE.length){
-                console.log(USER_LIKE)
-                  LOCATION_INFO_ACTIVATED = true;
-                  //re-render
-                  renderResult();
-              }
-
-              
-          }
-        );
-
-
-    });
-    
-    
  
-  }
-
 
   // Logout
   function logout(){
     FB.logout(function(response) {
       // user is now logged out
+      updateCSS('logout');
       document.getElementById('status').innerHTML =
         'Logged out.';
+
+      var root = document.getElementById('cafes');
+      root.innerHTML = "";
     });
   }

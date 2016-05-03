@@ -1,6 +1,27 @@
 body {
 	text-align: center;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    padding-top: 30px;
+}
+.show {
+    display: block;
+    text-align: center;
+    right: 10px;
+    top: 10px;
+    position: absolute;
+    height: 40px;
+    width: 100px;
+    background: white;
+}
+#logout.show {
+    border: 1px solid;
+    cursor: pointer;
+}
+#logout.show:hover {
+    box-shadow: 2px 2px 0 0 rgba(0,0,0,0.12);
+}
+.hide {
+    display: none;
 }
 .status {
 	position: absolute;
@@ -16,9 +37,16 @@ body {
     margin: 10px auto;
     position: relative;
     text-align: left;
+
+    text-decoration: none;
+    color: black;
+    display: block;
+}
+.list:hover {
+    border-color: #DB1C1C;
 }
 .main {
-	max-width: 160px;
+	max-width: 160px;  
 }
 .title {
 	font-size: 14px;
